@@ -1,0 +1,43 @@
+.DS_Store
+__pycache__/
+*.py[cod]
+*.so
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+.ipynb_checkpoints/
+
+# Python environments
+.venv/
+venv/
+env/
+
+# Conda local files
+.conda/
+
+# Build and packaging
+build/
+dist/
+*.egg-info/
+
+# Data artifacts
+data/raw/**
+!data/raw/.gitkeep
+!data/raw/osm/.gitkeep
+!data/raw/chirps/.gitkeep
+!data/raw/soil/.gitkeep
+data/processed/*.parquet
+
+# Model artifacts
+models/*.joblib
+models/*.png
+
+# MLflow
+mlruns/
+
+# Streamlit
+.streamlit/
+
+# IDE
+.vscode/
