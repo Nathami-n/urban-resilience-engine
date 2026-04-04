@@ -14,9 +14,9 @@ MODEL_PATH = PROJECT_ROOT / "models" / "xgb_risk_model.joblib"
 # Load model once at module import
 try:
     _model = joblib.load(MODEL_PATH)
-    print(f"✓ Model loaded from {MODEL_PATH}")
+    print(f"+ Model loaded from {MODEL_PATH}")
 except FileNotFoundError:
-    print(f"⚠ Model not found at {MODEL_PATH}, predictions will be stubs")
+    print(f"WARNING: Model not found at {MODEL_PATH}, predictions will be stubs")
     _model = None
 
 

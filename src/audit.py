@@ -20,7 +20,7 @@ def main() -> None:
     print("=" * 70)
 
     # Load data and model
-    print("\n→ Loading data and model...")
+    print("\n>> Loading data and model...")
     df = pd.read_parquet(FEATURES_PATH)
     model = joblib.load(MODEL_PATH)
 
@@ -38,13 +38,13 @@ def main() -> None:
         )
     )
 
-    print(f"  ✓ Loaded {len(df)} records")
-    print(f"  ✓ Density threshold: {density_threshold:.1f} people/km²")
+    print(f"  + Loaded {len(df)} records")
+    print(f"  + Density threshold: {density_threshold:.1f} people/km²")
     print(
-        f"  ✓ High density: {(df['density_group'] == 'High Density (Urban Core)').sum()} records"
+        f"  + High density: {(df['density_group'] == 'High Density (Urban Core)').sum()} records"
     )
     print(
-        f"  ✓ Low density: {(df['density_group'] == 'Low Density (Peri-urban)').sum()} records"
+        f"  + Low density: {(df['density_group'] == 'Low Density (Peri-urban)').sum()} records"
     )
 
     # Prepare features
@@ -64,11 +64,11 @@ def main() -> None:
     y_pred = model.predict(X)
 
     # Overall performance
-    print("\n→ Overall Model Performance:")
+    print("\n>> Overall Model Performance:")
     print(classification_report(y_true, y_pred, target_names=["Low Risk", "High Risk"]))
 
     # Group-wise performance
-    print("\n→ Performance by Density Group:\n")
+    print("\n>> Performance by Density Group:\n")
 
     results = []
     for group in df["density_group"].unique():
@@ -100,7 +100,7 @@ def main() -> None:
         print()
 
     # Generate markdown report
-    print("→ Generating audit report...")
+    print(">> Generating audit report...")
 
     report_lines = [
         "# Bias Audit Report",
@@ -210,10 +210,10 @@ def main() -> None:
     with open(AUDIT_REPORT_PATH, "w") as f:
         f.write(report_md)
 
-    print(f"  ✓ Audit report saved to {AUDIT_REPORT_PATH}")
+    print(f"  + Audit report saved to {AUDIT_REPORT_PATH}")
 
     print("\n" + "=" * 70)
-    print("✅ BIAS AUDIT COMPLETE")
+    print("SUCCESS: BIAS AUDIT COMPLETE")
     print("=" * 70)
 
 

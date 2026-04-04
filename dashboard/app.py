@@ -8,7 +8,11 @@ import plotly.express as px
 import plotly.graph_objects as go
 from pathlib import Path
 
-st.set_page_config(page_title="Urban Resilience Engine", layout="wide")
+st.set_page_config(
+    page_title="Urban Resilience Engine",
+    layout="wide",
+    initial_sidebar_state="collapsed",
+)
 
 # Paths
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -18,10 +22,10 @@ METRICS_PATH = MODELS_DIR / "metrics.json"
 SHAP_PLOT_PATH = MODELS_DIR / "shap_summary.png"
 FORECAST_PLOT_PATH = MODELS_DIR / "forecast_chart.png"
 
-# Title and header
-st.title("🌍 Urban Resilience Engine")
-st.caption("Predicting climate impact on urban infrastructure in Kenya")
-st.divider()
+# Header
+st.title("Urban Resilience Engine")
+st.markdown("**Climate Risk Assessment for Kenyan Infrastructure**")
+st.markdown("---")
 
 # Load metrics
 if METRICS_PATH.exists():
@@ -38,13 +42,13 @@ else:
     st.error("Features not found. Run `python src/etl.py` first.")
     st.stop()
 
-# Tabs
+# Navigation tabs
 tab1, tab2, tab3, tab4 = st.tabs(
-    ["📊 Risk Map", "📈 Forecast", "🔍 SHAP Explainability", "📋 Model Metrics"]
+    ["Risk Map", "Forecast Projection", "SHAP Analysis", "Model Performance"]
 )
 
 with tab1:
-    st.header("County Risk Map")
+    st.header("County Risk Assessment")
     st.caption("Average risk index by county (2013-2023)")
 
     # Aggregate risk by county
@@ -68,35 +72,35 @@ with tab1:
         title="Average Risk Index by County",
         labels={"county_id": "County", "risk_index": "Risk Index"},
     )
-    fig.update_layout(height=400)
-    st.plotly_chart(fig, use_container_width=True)
+    fig.update_layout(height=450, showlegend=True)
+    st.plotly_chart(fig, width="stretch")
 
     # Data table
-    st.subheader("County Risk Summary")
+    st.subheader("Summary Statistics")
     st.dataframe(
         county_risk.rename(
             columns={
                 "county_id": "County",
                 "risk_index": "Avg Risk Index",
-                "high_risk": "% High Risk Months",
+                "high_risk": "Proportion High Risk",
                 "risk_label": "Overall Status",
             }
         ),
         hide_index=True,
-        use_container_width=True,
+        width="stretch",
     )
 
 with tab2:
-    st.header("Risk Forecast (2013-2040)")
-    st.caption("Projected infrastructure risk trend")
+    st.header("Infrastructure Risk Forecast")
+    st.caption("Projected risk trend (2013-2040)")
 
     if FORECAST_PLOT_PATH.exists():
-        st.image(str(FORECAST_PLOT_PATH), use_container_width=True)
+        st.image(str(FORECAST_PLOT_PATH), width="stretch")
 
         if "peak_year" in metrics and "trough_year" in metrics:
             col1, col2 = st.columns(2)
-            col1.metric("Peak Risk Year", metrics["peak_year"])
-            col2.metric("Trough Year", metrics["trough_year"])
+            col1.metric("Forecasted Peak Risk Year", metrics["peak_year"])
+            col2.metric("Forecasted Trough Year", metrics["trough_year"])
     else:
         st.info("Forecast chart not available. Run `python src/model.py` to generate.")
 
@@ -109,26 +113,26 @@ with tab2:
         x="year",
         y="risk_index",
         markers=True,
-        title="Historical Risk Index (2013-2023)",
+        title="Historical Mean Risk Index (2013-2023)",
     )
-    fig2.update_traces(line=dict(width=3))
-    fig2.update_layout(height=350)
-    st.plotly_chart(fig2, use_container_width=True)
+    fig2.update_traces(line=dict(width=3, color="#1f77b4"))
+    fig2.update_layout(height=400)
+    st.plotly_chart(fig2, width="stretch")
 
 with tab3:
-    st.header("Feature Importance (SHAP)")
-    st.caption("Which factors drive infrastructure risk?")
+    st.header("SHAP Feature Importance Analysis")
+    st.caption("Identifying key drivers of infrastructure risk")
 
     if SHAP_PLOT_PATH.exists():
-        st.image(str(SHAP_PLOT_PATH), use_container_width=True)
+        st.image(str(SHAP_PLOT_PATH), width="stretch")
 
         st.markdown(
             """
-        **Interpretation:**
-        - Features sorted by average absolute SHAP value (global importance)
+        **Interpretation Guide:**
+        - Features are ranked by average absolute SHAP value (global importance)
         - Color indicates feature value (red = high, blue = low)
-        - X-axis shows impact on risk prediction
-        - Rainfall anomaly and temperature are key drivers
+        - Horizontal position shows impact on risk prediction
+        - Rainfall anomaly and soil organic carbon are primary drivers
         """
         )
     else:
@@ -147,7 +151,7 @@ with tab4:
         )
 
         col2.metric(
-            "CV AUC (mean)",
+            "Cross-Validation AUC",
             f"{metrics.get('cv_auc_mean', 0):.4f}",
             help="5-fold time-series cross-validation AUC",
         )
@@ -158,9 +162,9 @@ with tab4:
             help="Mean squared error for risk score regression",
         )
 
-        st.divider()
+        st.markdown("---")
 
-        st.subheader("Full Metrics")
+        st.subheader("Complete Metrics Summary")
         metrics_df = pd.DataFrame(
             [
                 {
@@ -171,11 +175,11 @@ with tab4:
                 if not isinstance(v, list)
             ]
         )
-        st.dataframe(metrics_df, hide_index=True, use_container_width=True)
+        st.dataframe(metrics_df, hide_index=True, width="stretch")
     else:
         st.warning("No metrics available.")
 
-st.divider()
+st.markdown("---")
 st.caption(
-    "Built with Streamlit | Data: CHIRPS, NOAA, OSM, Sentinel-2 | Model: XGBoost + SHAP"
+    "Data Sources: CHIRPS, NOAA GSOD, OpenStreetMap, Sentinel-2, iSDA Soil | Model: XGBoost + SHAP"
 )
