@@ -14,7 +14,12 @@ class FarmInput(BaseModel):
 
 @app.get("/health")
 def health() -> dict[str, str]:
-    return {"status": "ok"}
+    return {"status": "ok", "message": "happy coding"}
+
+
+@app.get("/version")
+def version() -> dict[str, str]:
+    return {"version": "1.0.0"}
 
 
 @app.post("/predict")

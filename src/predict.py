@@ -1,4 +1,5 @@
 """Prediction module - shared inference logic for API and tests."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -19,7 +20,9 @@ except FileNotFoundError:
     _model = None
 
 
-def extract_features_from_geojson(geojson: dict[str, Any], year: int) -> dict[str, float]:
+def extract_features_from_geojson(
+    geojson: dict[str, Any], year: int
+) -> dict[str, float]:
     """
     Extract features from GeoJSON for prediction.
     In production, this would compute spatial aggregates.
@@ -27,23 +30,23 @@ def extract_features_from_geojson(geojson: dict[str, Any], year: int) -> dict[st
     """
     # Default feature values (Nairobi averages)
     features = {
-        'rainfall_mm': 73.0,
-        'rainfall_anomaly': 5.0,
-        'temp_max_c': 31.0,
-        'temp_min_c': 15.0,
-        'soil_organic_carbon': 1.6,
-        'road_density_km_per_km2': 1.2,
-        'population_density': 4800.0,
-        'ndvi_mean': 0.37
+        "rainfall_mm": 73.0,
+        "rainfall_anomaly": 5.0,
+        "temp_max_c": 31.0,
+        "temp_min_c": 15.0,
+        "soil_organic_carbon": 1.6,
+        "road_density_km_per_km2": 1.2,
+        "population_density": 4800.0,
+        "ndvi_mean": 0.37,
     }
-    
+
     # Could extract from GeoJSON properties if provided
-    if 'features' in geojson and len(geojson['features']) > 0:
-        props = geojson['features'][0].get('properties', {})
+    if "features" in geojson and len(geojson["features"]) > 0:
+        props = geojson["features"][0].get("properties", {})
         for key in features.keys():
             if key in props:
                 features[key] = float(props[key])
-    
+
     return features
 
 
@@ -53,51 +56,56 @@ def predict_from_geojson(geojson: dict[str, Any], year: int) -> dict[str, Any]:
         raise TypeError("geojson must be a dictionary")
     if not isinstance(year, int):
         raise TypeError("year must be an integer")
-    
+
     if _model is None:
         return {
             "risk_score": 0.0,
             "decline_year": year,
             "status": "model_not_loaded",
-            "risk_label": "unknown"
+            "risk_label": "unknown",
         }
-    
+
     try:
         # Extract features
         features = extract_features_from_geojson(geojson, year)
-        
+
         # Create DataFrame (model expects specific column order)
         feature_cols = [
-            'rainfall_mm', 'rainfall_anomaly', 'temp_max_c', 'temp_min_c',
-            'soil_organic_carbon', 'road_density_km_per_km2',
-            'population_density', 'ndvi_mean'
+            "rainfall_mm",
+            "rainfall_anomaly",
+            "temp_max_c",
+            "temp_min_c",
+            "soil_organic_carbon",
+            "road_density_km_per_km2",
+            "population_density",
+            "ndvi_mean",
         ]
-        
+
         X = pd.DataFrame([features], columns=feature_cols)
-        
+
         # Predict
         risk_proba = _model.predict_proba(X)[0, 1]  # Probability of high risk
         risk_class = _model.predict(X)[0]
-        
+
         # Simple decline year forecast (in reality would use full time-series model)
         # Assume peak around 2030 based on current trends
         decline_year = 2030 if risk_proba > 0.5 else 2035
-        
+
         # MSE placeholder (would come from validation set)
         mse = 0.13
-        
+
         return {
             "risk_score": float(risk_proba),
             "risk_label": "high" if risk_class == 1 else "low",
             "decline_year": int(decline_year),
             "mse": float(mse),
-            "status": "success"
+            "status": "success",
         }
-        
+
     except Exception as e:
         return {
             "risk_score": 0.0,
             "decline_year": year,
             "status": f"error: {str(e)}",
-            "risk_label": "error"
+            "risk_label": "error",
         }
