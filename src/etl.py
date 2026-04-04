@@ -29,6 +29,7 @@ def fetch_county_boundaries() -> pd.DataFrame:
         'Uasin Gishu': {'lat': 0.520556, 'lon': 35.269722, 'area_km2': 3345},
     }
     
+    
     data = []
     for county_name, info in counties.items():
         lon, lat, area = info['lon'], info['lat'], info['area_km2']
