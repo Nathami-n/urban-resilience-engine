@@ -15,10 +15,8 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import TimeSeriesSplit, cross_val_score
 from sklearn.metrics import (
     classification_report,
-    confusion_matrix,
     roc_auc_score,
     mean_squared_error,
-    r2_score,
 )
 from xgboost import XGBClassifier
 import shap
@@ -33,7 +31,8 @@ def load_and_prep_data() -> tuple:
     """Load features and prepare train/test splits."""
     print(">> Loading features...")
     df = pd.read_parquet(FEATURES_PATH)
-
+    
+    
     # Drop duplicate NDVI columns if they exist (_x, _y suffixes from merge)
     cols_to_drop = [c for c in df.columns if c.endswith("_x") or c.endswith("_y")]
     if cols_to_drop:

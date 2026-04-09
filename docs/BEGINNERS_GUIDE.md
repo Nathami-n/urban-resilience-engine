@@ -25,6 +25,7 @@ This system predicts **infrastructure risk** in Kenyan cities caused by extreme 
 ### Real-World Example
 
 Imagine Nairobi gets heavy rainfall in April 2026:
+
 - **Question**: Will the roads flood? Will drainage fail? Should the city prepare?
 - **This System**: Analyzes weather patterns, soil quality, vegetation cover, and population density
 - **Output**: "75% risk of infrastructure failure in Zone X - allocate emergency resources"
@@ -42,6 +43,7 @@ Imagine Nairobi gets heavy rainfall in April 2026:
 ### Why This Matters
 
 Kenya faces increasing climate variability:
+
 - Intense rainfall during long rains (March-May) and short rains (October-December)
 - Rising temperatures affecting soil moisture
 - Rapid urbanization reducing vegetation cover
@@ -125,7 +127,7 @@ Collects data from multiple sources and merges them into one clean table.
    - Area in square kilometers
 
 2. **Climate Data** (CHIRPS/NOAA)
-   - **Variables**: 
+   - **Variables**:
      - `rainfall_mm`: Monthly rainfall in millimeters
      - `temp_max_c`: Maximum daily temperature (Celsius)
      - `temp_min_c`: Minimum daily temperature
@@ -137,7 +139,7 @@ Collects data from multiple sources and merges them into one clean table.
 
 3. **Soil Data** (iSDA Africa Soil)
    - **Variable**: `soil_organic_carbon` (g/kg)
-   - **Why It Matters**: 
+   - **Why It Matters**:
      - High carbon = healthy soil = better water absorption
      - Low carbon = degraded soil = more runoff/flooding
    - **Trend**: Declining over time due to urbanization
@@ -156,16 +158,20 @@ Collects data from multiple sources and merges them into one clean table.
 The ETL creates **derived features** (calculated from raw data):
 
 1. **Rainfall Anomaly**
+
    ```python
    rainfall_anomaly = current_rainfall - county_average_rainfall
    ```
+
    - Positive = wetter than normal (flood risk)
    - Negative = drier than normal (drought)
 
 2. **Risk Index** (composite score)
+
    ```python
    risk_index = 0.4 × rain_risk + 0.35 × temp_risk + 0.25 × soil_risk
    ```
+
    - Where:
      - `rain_risk` = normalized absolute rainfall anomaly (0-1)
      - `temp_risk` = normalized temperature (0-1)
@@ -176,6 +182,7 @@ The ETL creates **derived features** (calculated from raw data):
    ```python
    high_risk = 1 if risk_index > 75th_percentile else 0
    ```
+
    - Classification target: Maps continuous risk to yes/no
 
 #### Output
@@ -183,6 +190,7 @@ The ETL creates **derived features** (calculated from raw data):
 **File**: `data/processed/features.parquet`
 
 **Structure**:
+
 - **Rows**: 528 (4 counties × 11 years × 12 months)
 - **Columns**: 18
   - Identifiers: `county_id`, `year`, `month`, `year_month`
@@ -220,13 +228,13 @@ Vegetation health from satellite images.
 
 #### Interpreting NDVI Values
 
-| NDVI Range | Meaning | Example |
-|------------|---------|---------|
-| -1.0 to 0.0 | Water, bare rock | Lake Victoria |
-| 0.0 to 0.2 | Bare soil, urban areas | Nairobi CBD |
-| 0.2 to 0.4 | Grassland, sparse vegetation | Savanna |
-| 0.4 to 0.6 | Shrubland, crops | Agricultural areas |
-| 0.6 to 1.0 | Dense forest | Kakamega Forest |
+| NDVI Range  | Meaning                      | Example            |
+| ----------- | ---------------------------- | ------------------ |
+| -1.0 to 0.0 | Water, bare rock             | Lake Victoria      |
+| 0.0 to 0.2  | Bare soil, urban areas       | Nairobi CBD        |
+| 0.2 to 0.4  | Grassland, sparse vegetation | Savanna            |
+| 0.4 to 0.6  | Shrubland, crops             | Agricultural areas |
+| 0.6 to 1.0  | Dense forest                 | Kakamega Forest    |
 
 #### Why NDVI Matters for Infrastructure Risk
 
@@ -251,6 +259,7 @@ Vegetation health from satellite images.
 #### What Is Machine Learning?
 
 Instead of programming rules manually, we:
+
 1. Show the computer thousands of examples
 2. Let it find patterns automatically
 3. Use those patterns to predict new cases
@@ -315,6 +324,7 @@ test = df[df["year"] > 2020]    # 112 rows (21%)
 ```
 
 **Why not random split?**
+
 - Time series data has temporal dependencies
 - We want to predict the future, not interpolate the past
 - Training on 2021 to predict 2020 would be cheating!
@@ -326,6 +336,7 @@ model.fit(X_train, y_train)
 ```
 
 **What happens inside:**
+
 1. Randomly split rows and features
 2. Build first tree to minimize classification error
 3. Calculate residual errors (where the first tree was wrong)
@@ -349,14 +360,15 @@ Average the 5 test scores → robust performance estimate.
 
 ##### Step 6: Evaluate Performance
 
-| Metric | Train | Test | Meaning |
-|--------|-------|------|---------|
-| **AUC** | 1.0000 | 0.9687 | Excellent discrimination (near perfect) |
-| **Precision** | 0.95 | 0.92 | Of predicted high-risk, 92% were correct |
-| **Recall** | 0.93 | 0.89 | Of actual high-risk, we caught 89% |
-| **F1-Score** | 0.94 | 0.90 | Harmonic mean of precision/recall |
+| Metric        | Train  | Test   | Meaning                                  |
+| ------------- | ------ | ------ | ---------------------------------------- |
+| **AUC**       | 1.0000 | 0.9687 | Excellent discrimination (near perfect)  |
+| **Precision** | 0.95   | 0.92   | Of predicted high-risk, 92% were correct |
+| **Recall**    | 0.93   | 0.89   | Of actual high-risk, we caught 89%       |
+| **F1-Score**  | 0.94   | 0.90   | Harmonic mean of precision/recall        |
 
 **Interpretation**:
+
 - Test AUC 0.97 = model is highly accurate on unseen data
 - Train AUC 1.0 = slight overfitting (not a major concern given test AUC)
 
@@ -408,7 +420,6 @@ Base value (average risk):        0.50
 
 1. **Historical Trend Analysis** (2013-2023)
    - Fit a polynomial curve to risk_index over time
-   
 2. **Projection**
    - Assume current trends continue
    - Model shows risk peaking around 2030
@@ -420,6 +431,7 @@ Base value (average risk):        0.50
    - Green line: Present (2023)
 
 **Limitations**:
+
 - This is a simple trend extrapolation, not a climate model
 - Real forecasting would use climate projections (RCP scenarios)
 - Useful for demonstration, not policy decisions
@@ -433,6 +445,7 @@ Base value (average risk):        0.50
 #### What It Does
 
 Exposes the trained model as a web service that:
+
 - Accepts HTTP requests (like a website URL)
 - Returns predictions as JSON (structured data)
 
@@ -526,6 +539,7 @@ The dashboard has 4 tabs:
 #### How to Use the Dashboard
 
 1. Start the server:
+
    ```bash
    streamlit run dashboard/app.py
    ```
@@ -547,6 +561,7 @@ Imagine teaching a 5-year-old to avoid poisonous mushrooms in a forest.
 #### Method 1: Rule-Based (Traditional Programming)
 
 You tell the child explicit rules:
+
 ```
 IF mushroom is red with white spots THEN poisonous
 IF mushroom has gills AND grows on wood THEN safe
@@ -559,7 +574,6 @@ IF mushroom has gills AND grows on wood THEN safe
 1. **Training Phase**:
    - Show child 500 mushrooms (labeled "safe" or "poisonous")
    - Child observes patterns: "Red ones are often bad, brown ones usually safe"
-   
 2. **Testing Phase**:
    - Show child 100 new mushrooms (never seen before)
    - Child predicts safety based on learned patterns
@@ -579,12 +593,12 @@ IF mushroom has gills AND grows on wood THEN safe
 
 ### Why XGBoost? (vs. Other Algorithms)
 
-| Algorithm | Pros | Cons | Use Case |
-|-----------|------|------|----------|
-| **Linear Regression** | Simple, interpretable | Can't capture complex patterns | Linear relationships only |
-| **Neural Networks** | Very powerful | Needs 1000s of examples, slow | Image/text, big data |
-| **Random Forest** | Good for tabular data | Can overfit | General tabular data |
-| **XGBoost** | Best for tabular, fast, accurate | Complex tuning | **Our choice** (528 rows, 8 features) |
+| Algorithm             | Pros                             | Cons                           | Use Case                              |
+| --------------------- | -------------------------------- | ------------------------------ | ------------------------------------- |
+| **Linear Regression** | Simple, interpretable            | Can't capture complex patterns | Linear relationships only             |
+| **Neural Networks**   | Very powerful                    | Needs 1000s of examples, slow  | Image/text, big data                  |
+| **Random Forest**     | Good for tabular data            | Can overfit                    | General tabular data                  |
+| **XGBoost**           | Best for tabular, fast, accurate | Complex tuning                 | **Our choice** (528 rows, 8 features) |
 
 ---
 
@@ -601,6 +615,7 @@ python src/etl.py
 ```
 
 **Expected Output**:
+
 ```
 ======================================================================
 PHASE 1: ETL PIPELINE
@@ -626,6 +641,7 @@ SUCCESS: ETL PIPELINE COMPLETE
 ```
 
 **What to Check**:
+
 1. File exists: `data/processed/features.parquet`
 2. File size: ~50-100 KB
 3. No error messages
@@ -640,6 +656,7 @@ python src/vision.py
 ```
 
 **Expected Output**:
+
 ```
 ======================================================================
 PHASE 2: NDVI EXTRACTION
@@ -669,6 +686,7 @@ SUCCESS: NDVI EXTRACTION COMPLETE
 ```
 
 **What to Check**:
+
 1. NDVI columns added to features.parquet
 2. NDVI range: 0.2-0.6 (realistic for urban/peri-urban)
 3. No NaN values in NDVI columns
@@ -682,6 +700,7 @@ python src/model.py
 ```
 
 **Expected Output** (truncated):
+
 ```
 ======================================================================
 PHASE 3: MODEL TRAINING
@@ -743,6 +762,7 @@ Final Metrics Summary:
 ```
 
 **What to Check**:
+
 1. Test AUC > 0.90 (excellent)
 2. CV AUC > 0.85 (good generalization)
 3. Files created:
@@ -760,6 +780,7 @@ python src/audit.py
 ```
 
 **Expected Output**:
+
 ```
 ======================================================================
 BIAS AUDIT
@@ -800,6 +821,7 @@ SUCCESS: BIAS AUDIT COMPLETE
 ```
 
 **What to Check**:
+
 1. F1-Score difference < 0.05 (minimal bias)
 2. Both groups have similar performance (no systematic discrimination)
 3. File created: `audit_report.md`
@@ -815,6 +837,7 @@ uvicorn api.main:app --reload
 ```
 
 **Expected Output**:
+
 ```
 INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
 INFO:     Started reloader process
@@ -831,8 +854,9 @@ curl http://localhost:8000/health
 ```
 
 **Expected Response**:
+
 ```json
-{"status":"ok","message":"happy coding"}
+{ "status": "ok", "message": "happy coding" }
 ```
 
 **Test prediction endpoint**:
@@ -852,6 +876,7 @@ curl -X POST http://localhost:8000/predict \
 ```
 
 **Expected Response**:
+
 ```json
 {
   "risk_score": 0.7234,
@@ -863,6 +888,7 @@ curl -X POST http://localhost:8000/predict \
 ```
 
 **What to Check**:
+
 1. Server starts without errors
 2. Health endpoint returns 200 status
 3. Predict endpoint returns valid JSON
@@ -881,6 +907,7 @@ streamlit run dashboard/app.py
 ```
 
 **Expected Output**:
+
 ```
   You can now view your Streamlit app in your browser.
 
@@ -914,6 +941,7 @@ streamlit run dashboard/app.py
    - Numbers match model training output
 
 **What to Check**:
+
 - No error messages in terminal
 - All tabs render correctly
 - Images load (no broken image icons)
@@ -930,6 +958,7 @@ pytest tests/ -v
 ```
 
 **Expected Output**:
+
 ```
 ========================= test session starts =========================
 platform darwin -- Python 3.11.X, pytest-7.X.X
@@ -942,6 +971,7 @@ tests/test_smoke.py::test_model_file_exists PASSED              [100%]
 ```
 
 **What to Check**:
+
 1. Both tests pass (green)
 2. No failures or errors
 3. Test execution < 1 second
@@ -980,6 +1010,7 @@ streamlit run dashboard/app.py
 ```
 
 **What to Check**:
+
 - Each phase completes without errors
 - Files created at each stage
 - API responds to requests
@@ -994,12 +1025,14 @@ streamlit run dashboard/app.py
 **Parquet** = a file format for storing tabular data (like CSV but better)
 
 **Advantages over CSV**:
+
 - **Compression**: 10x smaller file size
 - **Speed**: Reads 100x faster
 - **Types**: Stores data types (int, float, string) - CSV is all text
 - **Columns**: Can read just specific columns (CSV reads entire file)
 
 **Example**:
+
 ```python
 # CSV (slow, large)
 df = pd.read_csv("features.csv")  # 2 MB, 5 seconds
@@ -1015,14 +1048,17 @@ df = pd.read_parquet("features.parquet")  # 200 KB, 0.1 seconds
 **Feature** = a measurable property used for prediction (also called "variable" or "predictor")
 
 **Example - Predicting House Price**:
+
 - Features: bedrooms, square_footage, location, age
 - Target: price
 
 **In Our Project**:
+
 - Features (X): rainfall_mm, temp_max_c, ndvi_mean, soil_organic_carbon, etc.
 - Target (y): high_risk (0 or 1)
 
 **Good vs. Bad Features**:
+
 - **Good**: Correlated with target, measurable, stable
 - **Bad**: Redundant, noisy, leaks future information
 
@@ -1031,16 +1067,19 @@ df = pd.read_parquet("features.parquet")  # 200 KB, 0.1 seconds
 ### 3. Overfitting vs. Underfitting
 
 **Underfitting** (too simple):
+
 - Model doesn't capture patterns
 - Example: Using only 1 feature (rainfall) to predict risk
 - Result: Poor accuracy on both train and test
 
 **Good Fit** (just right):
+
 - Model learns true patterns
 - Generalizes to new data
 - Example: Our model (Train AUC 1.0, Test AUC 0.97)
 
 **Overfitting** (too complex):
+
 - Model memorizes training data
 - Fails on new data
 - Example: Train AUC 1.0, Test AUC 0.5
@@ -1060,7 +1099,7 @@ df = pd.read_parquet("features.parquet")  # 200 KB, 0.1 seconds
 
 ```
 Year:  2013 2014 2015 2016 2017 2018 2019 2020 2021 2022 2023
- 
+
 Fold 1: [Train--------] [Test]
 Fold 2: [Train------------] [Test]
 Fold 3: [Train----------------] [Test]
@@ -1069,11 +1108,13 @@ Fold 5: [Train------------------------] [Test]
 ```
 
 **Why not Random Split?**
+
 - Time series has temporal order
 - Future depends on past (autocorrelation)
 - Random split leaks future information into training
 
 **Our Results**:
+
 - 5 folds
 - AUC scores: [0.84, 0.89, 0.91, 0.90, 0.90]
 - Mean: 0.89 ± 0.08
@@ -1086,11 +1127,13 @@ Fold 5: [Train------------------------] [Test]
 **AUC = Area Under the ROC Curve**
 
 **ROC Curve** (Receiver Operating Characteristic):
+
 - X-axis: False Positive Rate (innocent labeled guilty)
 - Y-axis: True Positive Rate (guilty labeled guilty)
 - Plots performance at different thresholds
 
 **Interpretation**:
+
 - **0.5**: Random guessing (coin flip)
 - **0.7-0.8**: Fair
 - **0.8-0.9**: Good
@@ -1098,6 +1141,7 @@ Fold 5: [Train------------------------] [Test]
 - **1.0**: Perfect (suspicious - might be overfitting)
 
 **Why AUC?**
+
 - Single number summarizing classifier performance
 - Threshold-independent (works even if we change cutoff)
 - Robust to class imbalance (25% high-risk vs. 75% low-risk)
@@ -1132,6 +1176,7 @@ Actual  Low      TN    FP
    - Our model: 0.87
 
 **Real-World Impact**:
+
 - **High Precision**: Fewer false alarms → don't waste resources
 - **High Recall**: Catch more disasters → save lives
 - **Balance**: Need both (F1-score)
@@ -1143,11 +1188,13 @@ Actual  Low      TN    FP
 **SHAP** = SHapley Additive exPlanations (from game theory)
 
 **The Problem**:
+
 - ML models are "black boxes"
 - User: "Why did you predict this area is high-risk?"
 - Model: "🤷 I just know"
 
 **SHAP Solution**:
+
 - Calculates each feature's contribution to the prediction
 - Based on Shapley values (Nobel Prize-winning concept)
 
@@ -1170,6 +1217,7 @@ Final prediction:                     0.85  (High Risk)
 ```
 
 **Visualization**:
+
 - `shap_summary.png`: Global feature importance (all predictions)
 - Dot plot: Each row = feature, position = importance, color = value
 
@@ -1201,6 +1249,7 @@ Final prediction:                     0.85  (High Risk)
    - Needs lots of data
 
 **Our Forecast**:
+
 - Method: Polynomial fit to historical risk_index
 - Peak year: 2030
 - Assumption: Current trends continue (no major policy changes)
@@ -1213,17 +1262,20 @@ Final prediction:                     0.85  (High Risk)
 ### Issue 1: Model File Not Found
 
 **Error**:
+
 ```
 FileNotFoundError: models/xgb_risk_model.joblib
 ```
 
 **Solution**:
+
 ```bash
 # Run model training first
 python src/model.py
 ```
 
 **Check**:
+
 ```bash
 ls -lh models/
 # Should see: xgb_risk_model.joblib (~500 KB)
@@ -1234,17 +1286,20 @@ ls -lh models/
 ### Issue 2: Features Parquet Missing NDVI
 
 **Error**:
+
 ```
 KeyError: 'ndvi_mean'
 ```
 
 **Solution**:
+
 ```bash
 # Run vision.py to add NDVI columns
 python src/vision.py
 ```
 
 **Verify**:
+
 ```python
 import pandas as pd
 df = pd.read_parquet("data/processed/features.parquet")
@@ -1257,11 +1312,13 @@ print(df.columns)
 ### Issue 3: API Returns 500 Error
 
 **Error**:
+
 ```
 {"detail": "Internal Server Error"}
 ```
 
 **Debug**:
+
 1. Check terminal logs for full error trace
 2. Verify model is loaded:
    ```bash
@@ -1279,12 +1336,14 @@ print(df.columns)
 ### Issue 4: Dashboard Shows Blank Page
 
 **Symptoms**:
+
 - Browser loads but page is empty
 - Terminal shows errors
 
 **Common Causes**:
 
 1. **Missing data files**:
+
    ```bash
    # Check files exist
    ls data/processed/features.parquet
@@ -1294,6 +1353,7 @@ print(df.columns)
    ```
 
 2. **Port conflict**:
+
    ```bash
    # Try different port
    streamlit run dashboard/app.py --server.port 8502
@@ -1310,6 +1370,7 @@ print(df.columns)
 ### Issue 5: Conda Environment Issues
 
 **Error**:
+
 ```
 ModuleNotFoundError: No module named 'xgboost'
 ```
@@ -1317,6 +1378,7 @@ ModuleNotFoundError: No module named 'xgboost'
 **Solution**:
 
 1. **Verify environment is activated**:
+
    ```bash
    conda activate urban-resilience
    python -c "import sys; print(sys.executable)"
@@ -1324,6 +1386,7 @@ ModuleNotFoundError: No module named 'xgboost'
    ```
 
 2. **Reinstall environment**:
+
    ```bash
    conda env remove -n urban-resilience
    conda env create -f environment.yml
@@ -1341,6 +1404,7 @@ ModuleNotFoundError: No module named 'xgboost'
 ### Issue 6: Tests Fail
 
 **Error**:
+
 ```
 FAILED tests/test_smoke.py::test_features_parquet_exists
 ```
@@ -1348,11 +1412,13 @@ FAILED tests/test_smoke.py::test_features_parquet_exists
 **Debug**:
 
 1. **Run tests with verbose output**:
+
    ```bash
    pytest tests/ -v -s
    ```
 
 2. **Check file paths**:
+
    ```python
    from pathlib import Path
    PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -1393,6 +1459,7 @@ print("Best CV AUC:", grid.best_score_)
 ```
 
 **Why we didn't do it**:
+
 - Current model already excellent (AUC 0.97)
 - Grid search is compute-intensive
 - Project scope prioritizes simplicity
@@ -1402,6 +1469,7 @@ print("Best CV AUC:", grid.best_score_)
 ### Feature Engineering Ideas
 
 **Current Features** (8):
+
 - Climate: rainfall_mm, rainfall_anomaly, temp_max_c, temp_min_c
 - Soil: soil_organic_carbon
 - Infrastructure: road_density_km_per_km2, population_density
@@ -1410,12 +1478,14 @@ print("Best CV AUC:", grid.best_score_)
 **Potential New Features**:
 
 1. **Interaction Terms**:
+
    ```python
    df['rain_temp_interaction'] = df['rainfall_mm'] * df['temp_max_c']
    # Hypothesis: Heavy rain + high heat = extreme weather
    ```
 
 2. **Temporal Features**:
+
    ```python
    df['month_sin'] = np.sin(2 * np.pi * df['month'] / 12)
    df['month_cos'] = np.cos(2 * np.pi * df['month'] / 12)
@@ -1423,6 +1493,7 @@ print("Best CV AUC:", grid.best_score_)
    ```
 
 3. **Lag Features**:
+
    ```python
    df['rainfall_lag_1'] = df.groupby('county_id')['rainfall_mm'].shift(1)
    # Previous month's rainfall
@@ -1443,6 +1514,7 @@ print("Best CV AUC:", grid.best_score_)
 **Production Deployment** (not in scope, but good to know):
 
 1. **Containerization** (Docker):
+
    ```dockerfile
    FROM python:3.11
    COPY . /app
@@ -1500,22 +1572,27 @@ print("Best CV AUC:", grid.best_score_)
 ## Resources for Further Learning
 
 ### Python & Data Science
+
 - [Python for Data Analysis](https://wesmckinney.com/book/) by Wes McKinney (pandas creator)
 - [Kaggle Learn](https://www.kaggle.com/learn) - Free courses
 
 ### Machine Learning
+
 - [Hands-On Machine Learning](https://www.oreilly.com/library/view/hands-on-machine-learning/9781492032632/) by Aurélien Géron
 - [Andrew Ng's ML Course](https://www.coursera.org/learn/machine-learning) on Coursera
 
 ### Geospatial Data
+
 - [Automating GIS Processes](https://autogis-site.readthedocs.io/) - Free course
 - [Earth Data Science](https://www.earthdatascience.org/) - Earth Lab tutorials
 
 ### XGBoost
+
 - [XGBoost Documentation](https://xgboost.readthedocs.io/)
 - [XGBoost Paper](https://arxiv.org/abs/1603.02754) - Original research
 
 ### Explainable AI
+
 - [Interpretable Machine Learning](https://christophm.github.io/interpretable-ml-book/) - Free book
 - [SHAP Documentation](https://shap.readthedocs.io/)
 
@@ -1523,4 +1600,4 @@ print("Best CV AUC:", grid.best_score_)
 
 **END OF GUIDE**
 
-*Questions? Review this guide or consult the references above.*
+_Questions? Review this guide or consult the references above._

@@ -41,7 +41,7 @@ mlruns/
 
 # IDE
 .vscode/
-
+docs/
 
 # Developer
 REPORTING_AGENT.md
