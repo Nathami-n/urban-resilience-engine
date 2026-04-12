@@ -263,7 +263,7 @@ def export_features(df: pd.DataFrame) -> None:
     print(f">> Exporting features to {FEATURES_PATH}...")
 
     PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
-    df.to_parquet(FEATURES_PATH, index=False, engine="pyarrow")
+    df.to_parquet(FEATURES_PATH, index=False, engine="fastparquet")
 
     print(f"  + Exported {len(df)} rows × {len(df.columns)} columns")
     print(f"  + Schema: {dict(df.dtypes)}")

@@ -37,7 +37,6 @@ def load_and_prep_data() -> tuple:
     cols_to_drop = [c for c in df.columns if c.endswith("_x") or c.endswith("_y")]
     if cols_to_drop:
         df = df.drop(columns=cols_to_drop)
-
     print(f"  + Loaded {len(df)} records")
     print(f"  + Columns: {list(df.columns)}")
 

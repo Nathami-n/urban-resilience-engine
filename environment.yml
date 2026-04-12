@@ -30,3 +30,4 @@ dependencies:
   - pip:
       - streamlit-folium
       - earthengine-api
+      - fastparquet

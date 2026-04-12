@@ -7,6 +7,10 @@ import json
 import plotly.express as px
 import plotly.graph_objects as go
 from pathlib import Path
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from src.predict import predict_from_geojson
 
 st.set_page_config(
     page_title="Urban Resilience Engine",
@@ -43,8 +47,14 @@ else:
     st.stop()
 
 # Navigation tabs
-tab1, tab2, tab3, tab4 = st.tabs(
-    ["Risk Map", "Forecast Projection", "SHAP Analysis", "Model Performance"]
+tab1, tab2, tab3, tab4, tab5 = st.tabs(
+    [
+        "Risk Map",
+        "Forecast Projection",
+        "SHAP Analysis",
+        "Model Performance",
+        "Live Prediction",
+    ]
 )
 
 with tab1:
@@ -178,6 +188,102 @@ with tab4:
         st.dataframe(metrics_df, hide_index=True, width="stretch")
     else:
         st.warning("No metrics available.")
+
+with tab5:
+    st.header("Live Risk Prediction")
+    st.caption("Enter field values to get an instant infrastructure risk prediction.")
+
+    col1, col2 = st.columns(2)
+    with col1:
+        rainfall_mm = st.number_input(
+            "Rainfall (mm)", min_value=0.0, max_value=500.0, value=73.0
+        )
+        rainfall_anomaly = st.number_input(
+            "Rainfall Anomaly (mm)", min_value=-100.0, max_value=200.0, value=5.0
+        )
+        temp_max_c = st.number_input(
+            "Max Temperature (°C)", min_value=10.0, max_value=50.0, value=31.0
+        )
+        temp_min_c = st.number_input(
+            "Min Temperature (°C)", min_value=0.0, max_value=35.0, value=15.0
+        )
+    with col2:
+        soil_organic_carbon = st.number_input(
+            "Soil Organic Carbon (g/kg)", min_value=0.1, max_value=5.0, value=1.6
+        )
+        road_density = st.number_input(
+            "Road Density (km/km²)", min_value=0.0, max_value=5.0, value=1.2
+        )
+        population_density = st.number_input(
+            "Population Density (people/km²)",
+            min_value=0.0,
+            max_value=10000.0,
+            value=4800.0,
+        )
+        ndvi_mean = st.number_input(
+            "NDVI Mean", min_value=0.0, max_value=1.0, value=0.37
+        )
+    year = st.slider("Year", min_value=2024, max_value=2040, value=2026)
+
+    if st.button("Predict Risk", type="primary"):
+        geojson = {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [36.817223, -1.286389],
+                    },
+                    "properties": {
+                        "rainfall_mm": rainfall_mm,
+                        "rainfall_anomaly": rainfall_anomaly,
+                        "temp_max_c": temp_max_c,
+                        "temp_min_c": temp_min_c,
+                        "soil_organic_carbon": soil_organic_carbon,
+                        "road_density_km_per_km2": road_density,
+                        "population_density": population_density,
+                        "ndvi_mean": ndvi_mean,
+                    },
+                }
+            ],
+        }
+        result = predict_from_geojson(geojson, year)
+
+        st.markdown("---")
+        r1, r2, r3 = st.columns(3)
+        risk_score = result.get("risk_score", 0)
+        risk_label = result.get("risk_label", "unknown")
+        decline_year = result.get("decline_year", year)
+
+        color = "🔴" if risk_label == "high" else "🟢"
+        r1.metric("Risk Score", f"{risk_score:.2f}")
+        r2.metric("Risk Label", f"{color} {risk_label.upper()}")
+        r3.metric("Projected Decline Year", decline_year)
+
+        fig = go.Figure(
+            go.Indicator(
+                mode="gauge+number",
+                value=risk_score * 100,
+                title={"text": "Risk Score (%)"},
+                gauge={
+                    "axis": {"range": [0, 100]},
+                    "bar": {"color": "#d62728" if risk_label == "high" else "#2ca02c"},
+                    "steps": [
+                        {"range": [0, 40], "color": "#eafaea"},
+                        {"range": [40, 70], "color": "#fff3cd"},
+                        {"range": [70, 100], "color": "#fde8e8"},
+                    ],
+                    "threshold": {
+                        "line": {"color": "black", "width": 4},
+                        "thickness": 0.75,
+                        "value": 70,
+                    },
+                },
+            )
+        )
+        fig.update_layout(height=300)
+        st.plotly_chart(fig, width="stretch")
 
 st.markdown("---")
 st.caption(
