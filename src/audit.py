@@ -120,7 +120,7 @@ def main() -> None:
         f"- **High Density (Urban Core):** Population density > {density_threshold:.1f} people/km²  ",
         "  Proxy for established urban areas with higher infrastructure concentration.",
         "  ",
-        f"- **Low Density (Peri-urban):** Population density ≤ {density_threshold:.1f} people/km²  ",
+        f"- **Low Density (Peri-urban):** Population density <= {density_threshold:.1f} people/km2  ",
         "  Proxy for peri-urban and emerging development zones.",
         "",
         "**Justification:** Direct socioeconomic data (ward-level income, wealth indices) was not available from KNBS at the time of this analysis. Population density from OpenStreetMap building footprints serves as a reasonable proxy for infrastructure maturity and urbanization level.",
